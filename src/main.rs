@@ -5,17 +5,39 @@ use serde_json;
 mod utils;
 
 #[derive(Serialize)]
+struct Stl {
+    files: HashMap<String, StlFile>
+}
+
+impl Stl {
+    fn new() -> Self {
+        Self {
+            files: HashMap::new()
+        }
+    }
+
+    fn new_file(&mut self, file_name: &str) {
+        self.files.insert(file_name.to_owned(), StlFile::new());
+    }
+
+    fn add_field(&mut self, file_name: String, key: String, value: String) {
+        self.files.entry(file_name)
+            .and_modify(|k| { 
+                k.fields.insert(key, value);
+            });
+    }
+}
+
+#[derive(Serialize)]
 struct StlFile {
-    file_name: String,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    fields: Vec<HashMap<String, String>>
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
+    fields: HashMap<String, String>
 }
 
 impl StlFile {
-    fn new(file_name: String) -> Self {
+    fn new() -> Self {
         Self {
-            file_name,
-            fields: Vec::new()
+            fields: HashMap::new()
         }
     }
 }
@@ -55,26 +77,26 @@ fn main() -> io::Result<()> {
     let arg = &args[1];
     let dir = fs::read_dir(arg)?;
 
-    let mut structs = Vec::<StlFile>::new();
+    let mut stl = Stl::new();
     
     for file in dir {
         let f_u = file?;
         let file_name = f_u.file_name().to_str().unwrap().to_owned();
-        let mut s = StlFile::new(file_name);
+
+        stl.new_file(file_name.as_str());
         
         let mut f = File::open(f_u.path())?;
         let info_len = header(&mut f)?;
         let num_pairs = info_len/40;
         for _ in 0..num_pairs {
             let (key, value) = info(&mut f)?;
-            let mut map = HashMap::new();
-            map.insert(key.replace(char::from(0), ""), value.replace(char::from(0), ""));
-            s.fields.push(map);
+            //let mut map = HashMap::new();
+            //map.insert(key.replace(char::from(0), ""), value.replace(char::from(0), ""));
+            stl.add_field(file_name.clone(), key.replace(char::from(0), ""), value.replace(char::from(0), ""));
         }
-        structs.push(s);
     }
     
-    let json = serde_json::to_string_pretty(&structs)?;
+    let json = serde_json::to_string_pretty(&stl)?;
     let mut log = File::create("string_list.json")?;
     log.write(json.as_bytes())?;
 
