@@ -1,0 +1,8 @@
+[package]
+name = "diablo4-data-harvest"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde_json = "1.0.94"
+serde = { version = "1.0.158", features = ["derive"] }
