@@ -90,8 +90,6 @@ fn main() -> io::Result<()> {
         let num_pairs = info_len/40;
         for _ in 0..num_pairs {
             let (key, value) = info(&mut f)?;
-            //let mut map = HashMap::new();
-            //map.insert(key.replace(char::from(0), ""), value.replace(char::from(0), ""));
             stl.add_field(file_name.clone(), key.replace(char::from(0), ""), value.replace(char::from(0), ""));
         }
     }
