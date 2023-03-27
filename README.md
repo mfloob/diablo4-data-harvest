@@ -12,6 +12,6 @@ Outputs string_list.json.
 
 I've started adding a UI which will be used to view the data in a more organized way such as a tree view, search capabilities, and wasm support
 
-You can use the ui to select the folder by clicking file in the top left
+You can use the ui to select the folder by clicking `file` in the top left of the window
 
 You can still drag a folder over the binary
