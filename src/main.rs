@@ -10,7 +10,7 @@ fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
     let gui_mode = match args.len() {
         1 => true,
-        _ => false // for now, assume more than default arguments is gui mode
+        _ => false // for now, assume more than default arguments is not gui mode
     };
 
     // TODO: some sort of named argument system
