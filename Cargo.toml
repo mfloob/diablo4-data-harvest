@@ -6,3 +6,11 @@ edition = "2021"
 [dependencies]
 serde_json = "1.0.94"
 serde = { version = "1.0.158", features = ["derive"] }
+egui = "0.21.0"
+rfd = "0.11.3"
+egui_dock = "0.4.2"
+eframe = { version = "0.21.0", default-features = false, features = [
+    "default_fonts",
+    "glow",
+    # not sure if we want this yet. "persistence",   # Enable restoring app state when restarting the app.
+] }
