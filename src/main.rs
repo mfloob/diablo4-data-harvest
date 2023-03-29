@@ -19,7 +19,7 @@ fn main() -> io::Result<()> {
     }
     else {
         let path = &args[1];
-        cli(path.to_string())?;
+        run_cli(path.to_string())?;
     }
 
     Ok(())
@@ -44,7 +44,7 @@ fn native() -> eframe::Result<()> {
     )
 }
 
-fn cli(path: String) -> io::Result<()> {
+fn run_cli(path: String) -> io::Result<()> {
     let p = path.as_str();
     let dir = fs::read_dir(p)?;
     let last_file =  dir.last().unwrap()?.path();
@@ -53,7 +53,7 @@ fn cli(path: String) -> io::Result<()> {
     match extension.to_str() {
         Some("stl") => stl::Stl::run(p.to_string())?,
         Some("aff") => aff::Aff::run(p.to_string())?,
-        _ => todo!("Not yet implemeneted")
+        _ => todo!("Not yet implemented")
     }
 
     Ok(())
