@@ -1,6 +1,6 @@
 use egui_dock::{Tree, DockArea, Style};
 
-use crate::stl;
+use crate::{stl,aff};
 
 pub struct App {
     tree: Tree<String>,
@@ -39,6 +39,13 @@ impl eframe::App for App {
                         if let Some(path) = rfd::FileDialog::new().pick_folder() {
                             let path = path.display().to_string();
                             let _stl = stl::Stl::run(path).unwrap();
+                        }
+                    }
+                    if ui.button("Parse aff folder...").clicked() {
+                        ui.close_menu();
+                        if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                            let path = path.display().to_string();
+                            let _stl = aff::Aff::run(path).unwrap();
                         }
                     }
                     if ui.button("Quit").clicked() {

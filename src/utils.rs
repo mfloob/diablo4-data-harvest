@@ -22,3 +22,9 @@ pub fn read_u32(f: &mut File) -> io::Result<u32> {
 
     Ok(result)
 }
+
+pub fn go_to(f: &mut File, offset: u64) -> io::Result<()> {
+    f.seek(io::SeekFrom::Start(offset.into()))?;
+
+    Ok(())
+}

@@ -1,9 +1,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
-use std::{io::{self}, env};
+use std::{io::{self}, env, fs};
+use parsers::{stl, aff};
 
 mod utils;
-mod stl;
+mod parsers;
 mod app;
 
 fn main() -> io::Result<()> {
@@ -13,13 +14,12 @@ fn main() -> io::Result<()> {
         _ => false // for now, assume more than default arguments is not gui mode
     };
 
-    // TODO: some sort of named argument system
     if gui_mode {
         run_gui();
     }
     else {
         let path = &args[1];
-        let _stl = stl::Stl::run(path.to_string())?;
+        cli(path.to_string())?;
     }
 
     Ok(())
@@ -42,4 +42,19 @@ fn native() -> eframe::Result<()> {
         native_options,
         Box::new(|cc| Box::new(app::App::new(cc))),
     )
+}
+
+fn cli(path: String) -> io::Result<()> {
+    let p = path.as_str();
+    let dir = fs::read_dir(p)?;
+    let last_file =  dir.last().unwrap()?.path();
+    let extension = last_file.extension().unwrap();
+
+    match extension.to_str() {
+        Some("stl") => stl::Stl::run(p.to_string())?,
+        Some("aff") => aff::Aff::run(p.to_string())?,
+        _ => todo!("Not yet implemeneted")
+    }
+
+    Ok(())
 }

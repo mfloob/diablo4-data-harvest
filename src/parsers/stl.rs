@@ -27,6 +27,7 @@ impl Stl {
             });
     }
     
+    /// returns length of the info block
     fn header(f: &mut File) -> io::Result<u32> {
         let _deadbeef = utils::read_u32(f)?;
         utils::padding(f, 12)?;
@@ -42,15 +43,15 @@ impl Stl {
 
     fn info(f: &mut File) -> io::Result<(String, String)> {
         utils::padding(f, 8)?;
-        let key_offset = utils::read_u32(f)?;
+        let key_offset = utils::read_u32(f)? + 16u32;
         let key_len = utils::read_u32(f)?;
-        let buf = utils::read_offset(f, (key_offset + 16) as u64, key_len as usize)?;
+        let buf = utils::read_offset(f, key_offset as u64, key_len as usize)?;
         let key_string = String::from_utf8(buf).unwrap();
         utils::padding(f, 8)?;
     
-        let val_offset = utils::read_u32(f)?;
+        let val_offset = utils::read_u32(f)? + 16u32;
         let val_len = utils::read_u32(f)?;
-        let buf = utils::read_offset(f, (val_offset + 16) as u64, val_len as usize)?;
+        let buf = utils::read_offset(f, val_offset as u64, val_len as usize)?;
         let val_string = String::from_utf8(buf).unwrap();
         utils::padding(f, 8)?;
     
@@ -77,9 +78,7 @@ impl Stl {
             }
         }
 
-        println!("Parsing finished, pretty printing json");
         let json = serde_json::to_string_pretty(&stl)?;
-        println!("Complete");
         let mut log = File::create("string_list.json")?;
         log.write(json.as_bytes())?;
 
