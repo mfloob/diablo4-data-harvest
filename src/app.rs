@@ -1,6 +1,5 @@
 use egui::vec2;
 use egui_dock::{Tree, DockArea, Style};
-
 use crate::{Stl,Aff, parsers::{Parser}, utils};
 
 pub struct AppContext {

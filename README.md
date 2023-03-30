@@ -14,7 +14,7 @@ You can use the ui to select a folder to parse by clicking `file` in the top lef
 
 You can still drag a folder over the binary.
 
-Added data viewers. Viewing large files like `stl` should be done in release. `cargo build --release`
+Added data viewers.
 
 #
 ![](media/demo.gif)

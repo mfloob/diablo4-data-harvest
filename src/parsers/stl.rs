@@ -3,9 +3,8 @@ use itertools::Itertools;
 use serde::{Serialize, Deserialize};
 use serde_json;
 
-use crate::utils;
-
 use super::{Parser, ParserFile};
+use crate::utils;
 
 #[derive(Serialize, Deserialize)]
 pub struct Stl {
@@ -23,8 +22,8 @@ impl Stl {
         self.files.insert(file_name.to_owned(), StlFile::new());
     }
 
-    fn add_field(&mut self, file_name: String, key: String, value: String) {
-        self.files.entry(file_name)
+    fn add_field(&mut self, file_name: &String, key: String, value: String) {
+        self.files.entry(file_name.to_string())
             .and_modify(|k| { 
                 k.fields.insert(key, value);
             });
@@ -75,7 +74,7 @@ impl Stl {
             let num_pairs = info_len/40;
             for _ in 0..num_pairs {
                 let (key, value) = Stl::info(&mut f)?;
-                self.add_field(file_name.clone(), key.replace(char::from(0), ""), value.replace(char::from(0), ""));
+                self.add_field(&file_name, key.replace(char::from(0), ""), value.replace(char::from(0), ""));
             }
         }
 
@@ -88,28 +87,41 @@ impl Stl {
 }
 
 impl Parser for Stl {
-    fn data_view(&self, ui: &mut egui::Ui, filter: &String) {
+    fn data_view(&self, ui: &mut egui::Ui, filter: &str) {
         let files = &self.files;
-        egui::Grid::new("stl_grid")
-            .show(ui, |ui| {
-                for item in files.keys().filter(|x| filter.is_empty() || x.to_lowercase().contains(filter)).sorted() {
-                    if files[item].fields.len() > 0 {
-                        ui.collapsing(item, |ui| {
-                            let values = &files[item];
-                            for value in values.fields.keys().sorted() {
-                                ui.horizontal(|ui| {
-                                    ui.strong(format!("{}:", value));
-                                    ui.label(&values.fields[value]);
+        let keys: Vec<_> =  files.keys().filter(|x| filter.is_empty() || x.to_lowercase().contains(filter)).sorted().collect();
+        let scroll = egui::ScrollArea::new([false, true]);
+        scroll.show_rows(ui, 
+            10f32, 
+            keys.len(), 
+            |ui, row_range| {
+                egui::Grid::new("stl_grid")
+                    .show(ui, |ui| {     
+                        let range = match keys.len() < row_range.end {
+                            true => 0..keys.len(),
+                            false => row_range
+                        };
+                        for item in &keys[range] {
+                            if files[*item].fields.len() > 0 {
+                                ui.collapsing(*item, |ui| {
+                                    let values = &files[*item];
+                                    for value in values.fields.keys().sorted() {
+                                        ui.horizontal(|ui| {
+                                            ui.strong(format!("{}:", value));
+                                            ui.label(&values.fields[value]);
+                                        });
+                                    }
                                 });
                             }
-                        });
-                    }
-                    else {
-                        ui.label(item);
-                    }
-                    ui.end_row();
-                }
-            });
+                            else {
+                                ui.label(*item);
+                            }
+                            ui.end_row();                            
+                        }
+                    });
+                ui.allocate_space(egui::vec2(ui.available_width(), 1f32));
+        });
+
     }
 
     fn tab_title(&self) -> String {

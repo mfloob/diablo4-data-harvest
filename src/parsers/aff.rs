@@ -3,9 +3,8 @@ use itertools::Itertools;
 use serde::{Serialize, Deserialize};
 use serde_json;
 
-use crate::utils;
-
 use super::{ParserFile, Parser};
+use crate::utils;
 
 #[derive(Serialize, Deserialize)]
 pub struct Aff {
@@ -92,7 +91,7 @@ impl Aff {
 }
 
 impl Parser for Aff {
-    fn data_view(&self, ui: &mut egui::Ui, filter: &String) {
+    fn data_view(&self, ui: &mut egui::Ui, filter: &str) {
         let files = &self.files;
         egui::Grid::new("aff_grid")
             .show(ui, |ui| {                        
