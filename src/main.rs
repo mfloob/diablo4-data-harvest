@@ -1,7 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
 use std::{io::{self}, env, fs};
-use parsers::{stl, aff};
+use parsers::{stl::Stl, aff::Aff};
 
 mod utils;
 mod parsers;
@@ -51,8 +51,14 @@ fn run_cli(path: String) -> io::Result<()> {
     let extension = last_file.extension().unwrap();
 
     match extension.to_str() {
-        Some("stl") => stl::Stl::run(p.to_string())?,
-        Some("aff") => aff::Aff::run(p.to_string())?,
+        Some("stl") => {
+            let mut stl = Stl::new();
+            let _ = stl.run(path);
+        },
+        Some("aff") => {
+            let mut aff = Aff::new();
+            let _ = aff.run(path);
+        },
         _ => todo!("Not yet implemented")
     }
 

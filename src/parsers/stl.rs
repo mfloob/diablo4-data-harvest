@@ -1,16 +1,16 @@
 use std::{io::{self, Write}, fs::{File, self}, collections::HashMap};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use serde_json;
 
 use crate::utils;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Stl {
-    files: HashMap<String, StlFile>
+    pub files: HashMap<String, StlFile>
 }
 
 impl Stl {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             files: HashMap::new()
         }
@@ -58,38 +58,37 @@ impl Stl {
         Ok((key_string, val_string))
     }
 
-    pub fn run(path: String) -> io::Result<()> {
+    pub fn run(&mut self, path: String) -> io::Result<()> {
         let dir = fs::read_dir(path)?;
 
-        let mut stl = Stl::new();
-        
         for file in dir {
             let f_u = file?;
             let file_name = f_u.file_name().to_str().unwrap().to_owned();
 
-            stl.new_file(file_name.as_str());
+            self.new_file(file_name.as_str());
             
             let mut f = File::open(f_u.path())?;
             let info_len = Stl::header(&mut f)?;
             let num_pairs = info_len/40;
             for _ in 0..num_pairs {
                 let (key, value) = Stl::info(&mut f)?;
-                stl.add_field(file_name.clone(), key.replace(char::from(0), ""), value.replace(char::from(0), ""));
+                self.add_field(file_name.clone(), key.replace(char::from(0), ""), value.replace(char::from(0), ""));
             }
         }
 
-        let json = serde_json::to_string_pretty(&stl)?;
-        let mut log = File::create("string_list.json")?;
+        let json = serde_json::to_string_pretty(&self)?;
+        let mut log = File::create("stl.json")?;
         log.write(json.as_bytes())?;
 
         Ok(())
     }
 }
 
-#[derive(Serialize)]
-struct StlFile {
+#[derive(Serialize, Deserialize)]
+pub struct StlFile {
     #[serde(skip_serializing_if = "HashMap::is_empty")]
-    fields: HashMap<String, String>
+    #[serde(default)]
+    pub fields: HashMap<String, String>
 }
 
 impl StlFile {

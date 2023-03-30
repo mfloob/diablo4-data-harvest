@@ -1,16 +1,16 @@
 use std::{io::{self, Write}, fs::{File, self}, collections::HashMap};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use serde_json;
 
 use crate::utils;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Aff {
-    files: HashMap<String, AffFile>
+    pub files: HashMap<String, AffFile>
 }
 
 impl Aff {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             files: HashMap::new()
         }
@@ -56,16 +56,14 @@ impl Aff {
         Ok(key_string)
     }
 
-    pub fn run(path: String) -> io::Result<()> {
+    pub fn run(&mut self, path: String) -> io::Result<()> {
         let dir = fs::read_dir(path)?;
-
-        let mut aff = Aff::new();
 
         for file in dir {
             let f_u = file?;
             let file_name = f_u.file_name().to_str().unwrap().to_owned();
 
-            aff.new_file(file_name.as_str());
+            self.new_file(file_name.as_str());
 
             let mut f = File::open(f_u.path())?;
             let (info_offset, info_len) = Aff::header(&mut f)?;
@@ -78,22 +76,23 @@ impl Aff {
                     _ => utils::padding(&mut f, 16)?
                 }
                 let value = Aff::info(&mut f)?;
-                aff.add_field(file_name.clone(), value.replace(char::from(0), ""));
+                self.add_field(file_name.clone(), value.replace(char::from(0), ""));
             }
         }
 
-        let json = serde_json::to_string_pretty(&aff)?;
-        let mut log = File::create("aff_list.json")?;
+        let json = serde_json::to_string_pretty(&self)?;
+        let mut log = File::create("aff.json")?;
         log.write(json.as_bytes())?;
 
         Ok(())
     }
 }
 
-#[derive(Serialize)]
-struct AffFile {
+#[derive(Serialize, Deserialize)]
+pub struct AffFile {
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    values: Vec<String>
+    #[serde(default)]
+    pub values: Vec<String>
 }
 
 impl AffFile {
