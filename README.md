@@ -6,7 +6,7 @@ Currently supports `.stl` and `.aff` files.
 
 Drag a folder of `.stl` or `.aff` files over the binary.
 
-Outputs string_list.json or aff_list.json.
+Outputs stl.json or aff.json.
 
 ## UI
 
