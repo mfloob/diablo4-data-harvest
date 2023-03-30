@@ -10,8 +10,11 @@ Outputs string_list.json or aff_list.json.
 
 ## UI
 
-I've started adding a UI which will be used to view the data in a more organized way such as a tree view, search capabilities, and wasm support
+You can use the ui to select a folder to parse by clicking `file` in the top left of the window.
 
-You can use the ui to select a folder by clicking `file` in the top left of the window
+You can still drag a folder over the binary.
 
-You can still drag a folder over the binary
+Added data viewers. Viewing large files like `stl` should be done in release. `cargo build --release`
+
+#
+![](media/demo.gif)
