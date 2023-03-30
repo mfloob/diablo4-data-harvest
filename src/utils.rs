@@ -29,9 +29,9 @@ pub fn go_to(f: &mut File, offset: u64) -> io::Result<()> {
 }
 
 pub fn read_file(path: String) -> io::Result<Vec<u8>> {
-    let mut f = File::open(path).unwrap();
+    let mut f = File::open(path)?;
     let mut buf = Vec::new();
-    let _ = f.read_to_end(&mut buf).unwrap();
+    let _ = f.read_to_end(&mut buf)?;
 
     Ok(buf)
 }
