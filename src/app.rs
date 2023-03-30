@@ -1,9 +1,7 @@
-use std::{fs::File, io::Read, collections::HashMap};
 use egui::vec2;
-use itertools::Itertools;
 use egui_dock::{Tree, DockArea, Style};
 
-use crate::{Stl,Aff, parsers::{stl::StlFile, aff::AffFile}};
+use crate::{Stl,Aff, parsers::{Parser}, utils};
 
 pub struct AppContext {
     stl: Stl,
@@ -55,7 +53,6 @@ impl eframe::App for App {
                         if let Some(path) = rfd::FileDialog::new().pick_folder() {
                             let path = path.display().to_string();
                             let _aff = self.data.aff.run(path).unwrap();
-                            
                         }
                     }
                     if ui.button("Quit").clicked() {
@@ -91,13 +88,11 @@ impl eframe::App for App {
                         .set_file_name("stl.json")
                         .pick_file() {
                             let path = path.display().to_string();
-                            let mut f = File::open(path).unwrap();
-                            let mut buf = Vec::new();
-                            let _ = f.read_to_end(&mut buf).unwrap();
+                            let buf = utils::read_file(path).unwrap();                            
                             let data_str = String::from_utf8(buf).unwrap();
 
-                            let stl = serde_json::from_str(&data_str).unwrap();
-                            let tab = FileTab::new(FileType::Stl, stl, Aff::new());
+                            let stl: Stl = serde_json::from_str(&data_str).unwrap();
+                            let tab = FileTab::new(Box::new(stl) as Box<dyn Parser>);
                             self.data.tabs.push_to_focused_leaf(tab);
                             self.data.search = Default::default();
                     }
@@ -108,13 +103,11 @@ impl eframe::App for App {
                         .set_file_name("aff.json")
                         .pick_file() {
                             let path = path.display().to_string();
-                            let mut f = File::open(path).unwrap();
-                            let mut buf = Vec::new();
-                            let _ = f.read_to_end(&mut buf).unwrap();
+                            let buf = utils::read_file(path).unwrap();
                             let data_str = String::from_utf8(buf).unwrap();
 
-                            let aff = serde_json::from_str(&data_str).unwrap();
-                            let tab = FileTab::new(FileType::Aff, Stl::new(), aff);
+                            let aff: Aff = serde_json::from_str(&data_str).unwrap();
+                            let tab = FileTab::new(Box::new(aff) as Box<dyn Parser>);
                             self.data.tabs.push_to_focused_leaf(tab);
                             self.data.search = Default::default();
                     }
@@ -125,7 +118,7 @@ impl eframe::App for App {
             DockArea::new(&mut self.data.tabs)
                 .style(Style::from_egui(ctx.style().as_ref()))
                 .show(ctx, &mut FileViewer {
-                    search: self.data.search.clone()
+                    filter: self.data.search.clone()
                 });            
         }
         else {
@@ -138,96 +131,30 @@ impl eframe::App for App {
     }
 }
 
-enum FileType {
-    Stl,
-    Aff
-}
-
 struct FileTab {
-    file_type: FileType,
-    stl: Stl,
-    aff: Aff
+    parser: Box<dyn Parser>,
 }
 
 impl FileTab {
-    fn new(file_type: FileType, stl: Stl, aff: Aff) -> Self {
+    fn new(parser: Box<dyn Parser>) -> Self {
         Self {
-            file_type,
-            stl,
-            aff
+            parser
         }
-    }
-
-    fn stl(&self) -> &HashMap<String, StlFile> {
-        &self.stl.files
-    }
-
-    fn aff(&self) -> &HashMap<String, AffFile> {
-        &self.aff.files
     }
 }
 
 struct FileViewer {
-    search: String
+    filter: String
 }
 
 impl egui_dock::TabViewer for FileViewer {
     type Tab = FileTab;
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
-        match tab.file_type {
-            FileType::Stl => {
-                let files = tab.stl();
-                egui::Grid::new("stl_grid")
-                    .show(ui, |ui| {
-                        for item in files.keys().filter(|x| self.search.is_empty() || x.to_lowercase().contains(&self.search)).sorted() {
-                            if files[item].fields.len() > 0 {
-                                ui.collapsing(item, |ui| {
-                                    let values = &files[item];
-                                    for value in values.fields.keys().sorted() {
-                                        ui.horizontal(|ui| {
-                                            ui.strong(format!("{}:", value));
-                                            ui.label(&values.fields[value]);
-                                        });
-                                    }
-                                });
-                            }
-                            else {
-                                ui.label(item);
-                            }
-                            ui.end_row();
-                        }
-                    });
-            },
-            FileType::Aff => {
-                let files = tab.aff();
-                egui::Grid::new("aff_grid")
-                    .show(ui, |ui| {                        
-                        for item in files.keys().filter(|x| self.search.is_empty() || x.to_lowercase().contains(&self.search)).sorted() {
-                            if files[item].values.len() > 0 {
-                                ui.collapsing(item, |ui| {
-                                    let values = &files[item];
-                                    for value in values.values.iter() {
-                                        ui.horizontal(|ui| {
-                                            ui.label(value);
-                                        });
-                                    }
-                                });
-                            }
-                            else {
-                                ui.label(item);
-                            }
-                            ui.end_row();
-                        }
-                    });
-            }
-        }
+        tab.parser.data_view(ui, &self.filter);
     }
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
-        match tab.file_type {
-            FileType::Stl => ".stl".into(),
-            FileType::Aff => ".aff".into()
-        }
+        tab.parser.tab_title().into()
     }
 }

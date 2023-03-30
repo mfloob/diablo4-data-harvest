@@ -1,8 +1,11 @@
 use std::{io::{self, Write}, fs::{File, self}, collections::HashMap};
+use itertools::Itertools;
 use serde::{Serialize, Deserialize};
 use serde_json;
 
 use crate::utils;
+
+use super::{ParserFile, Parser};
 
 #[derive(Serialize, Deserialize)]
 pub struct Aff {
@@ -88,6 +91,35 @@ impl Aff {
     }
 }
 
+impl Parser for Aff {
+    fn data_view(&self, ui: &mut egui::Ui, filter: &String) {
+        let files = &self.files;
+        egui::Grid::new("aff_grid")
+            .show(ui, |ui| {                        
+                for item in files.keys().filter(|x| filter.is_empty() || x.to_lowercase().contains(filter)).sorted() {
+                    if files[item].values.len() > 0 {
+                        ui.collapsing(item, |ui| {
+                            let values = &files[item];
+                            for value in values.values.iter() {
+                                ui.horizontal(|ui| {
+                                    ui.label(value);
+                                });
+                            }
+                        });
+                    }
+                    else {
+                        ui.label(item);
+                    }
+                    ui.end_row();
+                }
+            });
+    }
+
+    fn tab_title(&self) -> String {
+        ".aff".to_owned()
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct AffFile {
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -101,4 +133,8 @@ impl AffFile {
             values: Vec::new()
         }
     }
+}
+
+impl ParserFile for AffFile {
+
 }

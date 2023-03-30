@@ -27,3 +27,11 @@ pub fn go_to(f: &mut File, offset: u64) -> io::Result<()> {
     f.seek(io::SeekFrom::Start(offset.into()))?;
     Ok(())
 }
+
+pub fn read_file(path: String) -> io::Result<Vec<u8>> {
+    let mut f = File::open(path).unwrap();
+    let mut buf = Vec::new();
+    let _ = f.read_to_end(&mut buf).unwrap();
+
+    Ok(buf)
+}

@@ -1,8 +1,11 @@
 use std::{io::{self, Write}, fs::{File, self}, collections::HashMap};
+use itertools::Itertools;
 use serde::{Serialize, Deserialize};
 use serde_json;
 
 use crate::utils;
+
+use super::{Parser, ParserFile};
 
 #[derive(Serialize, Deserialize)]
 pub struct Stl {
@@ -84,6 +87,36 @@ impl Stl {
     }
 }
 
+impl Parser for Stl {
+    fn data_view(&self, ui: &mut egui::Ui, filter: &String) {
+        let files = &self.files;
+        egui::Grid::new("stl_grid")
+            .show(ui, |ui| {
+                for item in files.keys().filter(|x| filter.is_empty() || x.to_lowercase().contains(filter)).sorted() {
+                    if files[item].fields.len() > 0 {
+                        ui.collapsing(item, |ui| {
+                            let values = &files[item];
+                            for value in values.fields.keys().sorted() {
+                                ui.horizontal(|ui| {
+                                    ui.strong(format!("{}:", value));
+                                    ui.label(&values.fields[value]);
+                                });
+                            }
+                        });
+                    }
+                    else {
+                        ui.label(item);
+                    }
+                    ui.end_row();
+                }
+            });
+    }
+
+    fn tab_title(&self) -> String {
+        ".stl".to_owned()
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct StlFile {
     #[serde(skip_serializing_if = "HashMap::is_empty")]
@@ -91,10 +124,15 @@ pub struct StlFile {
     pub fields: HashMap<String, String>
 }
 
+
 impl StlFile {
     fn new() -> Self {
         Self {
             fields: HashMap::new()
         }
     }
+}
+
+impl ParserFile for StlFile {
+
 }
