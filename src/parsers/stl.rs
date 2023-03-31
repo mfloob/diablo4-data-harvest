@@ -130,7 +130,17 @@ impl Parser for Stl {
                     });
                 ui.allocate_space(egui::vec2(ui.available_width(), 1f32));
         });
+    }
 
+    fn load_data_file(&self) -> Option<Box<dyn Parser>> {
+        match utils::load_or_pick_data_file("stl.json") {
+            Some(buf) => {
+                let data_str = String::from_utf8(buf).unwrap();
+                let stl: Stl = serde_json::from_str(&data_str).unwrap();
+                Some(Box::new(stl) as Box<dyn Parser>)
+            },
+            _ => None
+        }
     }
 
     fn tab_title(&self) -> String {

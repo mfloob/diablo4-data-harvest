@@ -36,10 +36,31 @@ pub fn go_to(f: &mut File, offset: u64) -> io::Result<()> {
     Ok(())
 }
 
-pub fn read_file(path: String) -> io::Result<Vec<u8>> {
+pub fn read_file(path: &str) -> io::Result<Vec<u8>> {
     let mut f = File::open(path)?;
     let mut buf = Vec::new();
     let _ = f.read_to_end(&mut buf)?;
 
     Ok(buf)
+}
+
+pub fn load_or_pick_data_file(file_name: &str) -> Option<Vec<u8>> {
+    let buf = match read_file(file_name) {
+        Ok(data) => Some(data),
+        Err(_) => {
+            if let Some(path) = rfd::FileDialog::new()
+                .add_filter(".json files", &["json"])
+                .set_file_name(file_name)
+                .pick_file() {
+                    let path = path.display().to_string();
+                    let buf = read_file(&path).unwrap();
+                    Some(buf)
+                }
+                else {
+                    None
+                }
+            }
+        };
+
+    buf
 }

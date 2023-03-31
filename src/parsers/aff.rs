@@ -118,6 +118,17 @@ impl Parser for Aff {
             });
     }
 
+    fn load_data_file(&self) -> Option<Box<dyn Parser>> {
+        match utils::load_or_pick_data_file("aff.json") {
+            Some(buf) => {
+                let data_str = String::from_utf8(buf).unwrap();
+                let aff: Aff = serde_json::from_str(&data_str).unwrap();
+                Some(Box::new(aff) as Box<dyn Parser>)
+            },
+            _ => None
+        }
+    }
+
     fn tab_title(&self) -> String {
         ".aff".to_owned()
     }

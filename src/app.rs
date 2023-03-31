@@ -1,6 +1,6 @@
 use egui::vec2;
 use egui_dock::{Tree, DockArea, Style};
-use crate::{Stl,Aff, parsers::{Parser, skl::Skl}, utils};
+use crate::{Stl,Aff, parsers::{Parser, skl::Skl}};
 
 pub struct AppContext {
     tabs: Tree<FileTab>,
@@ -85,48 +85,24 @@ impl eframe::App for App {
                 ui.heading("Data Viewers");
                 ui.separator();
                 if ui.button("Load stl data").clicked() {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter(".json files", &["json"])
-                        .set_file_name("stl.json")
-                        .pick_file() {
-                            let path = path.display().to_string();
-                            let buf = utils::read_file(path).unwrap();                            
-                            let data_str = String::from_utf8(buf).unwrap();
-
-                            let stl: Stl = serde_json::from_str(&data_str).unwrap();
-                            let tab = FileTab::new(Box::new(stl) as Box<dyn Parser>);
-                            self.data.tabs.push_to_focused_leaf(tab);
-                            self.data.search = Default::default();
+                    if let Some(parser) = Stl::new().load_data_file() {
+                        let tab = FileTab::new(parser);
+                        self.data.tabs.push_to_focused_leaf(tab);
+                        self.data.search = Default::default();                    
                     }
                 }
                 if ui.button("Load aff data").clicked() {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter(".json files", &["json"])
-                        .set_file_name("aff.json")
-                        .pick_file() {
-                            let path = path.display().to_string();
-                            let buf = utils::read_file(path).unwrap();
-                            let data_str = String::from_utf8(buf).unwrap();
-
-                            let aff: Aff = serde_json::from_str(&data_str).unwrap();
-                            let tab = FileTab::new(Box::new(aff) as Box<dyn Parser>);
-                            self.data.tabs.push_to_focused_leaf(tab);
-                            self.data.search = Default::default();
+                    if let Some(parser) = Aff::new().load_data_file() {
+                        let tab = FileTab::new(parser);
+                        self.data.tabs.push_to_focused_leaf(tab);
+                        self.data.search = Default::default();                    
                     }
                 }
                 if ui.button("Load skl data").clicked() {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter(".json files", &["json"])
-                        .set_file_name("skl.json")
-                        .pick_file() {
-                            let path = path.display().to_string();
-                            let buf = utils::read_file(path).unwrap();
-                            let data_str = String::from_utf8(buf).unwrap();
-
-                            let aff: Skl = serde_json::from_str(&data_str).unwrap();
-                            let tab = FileTab::new(Box::new(aff) as Box<dyn Parser>);
-                            self.data.tabs.push_to_focused_leaf(tab);
-                            self.data.search = Default::default();
+                    if let Some(parser) = Skl::new().load_data_file() {
+                        let tab = FileTab::new(parser);
+                        self.data.tabs.push_to_focused_leaf(tab);
+                        self.data.search = Default::default();                    
                     }
                 }
         });
