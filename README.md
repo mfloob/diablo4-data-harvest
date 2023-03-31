@@ -18,4 +18,4 @@ You can use the ui to select a folder to parse by clicking `file` in the top lef
 You can still drag a folder over the binary.
 
 #
-![](media/demo.gif)
+![](media/demo2.png)
