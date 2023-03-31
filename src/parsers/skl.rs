@@ -125,7 +125,7 @@ impl Parser for Skl {
                                 });
                                 ui.horizontal(|h| {
                                     h.strong("reward_hash:");
-                                    h.label(format!("{}", skill.reward_hash));
+                                    h.label(format!("{} ({:X})", skill.reward_hash, skill.reward_hash));
                                 });
                                 ui.horizontal(|h| {
                                     h.strong("is_root:");

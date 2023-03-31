@@ -18,8 +18,8 @@ impl Aff {
         }
     }
 
-    fn new_file(&mut self, file_name: &str) {
-        self.files.insert(file_name.to_owned(), AffFile::new());
+    fn new_file(&mut self, file_name: &str, hash_id: u32) {
+        self.files.insert(file_name.to_owned(), AffFile::new(hash_id));
     }
 
     fn add_field(&mut self, file_name: &str, value: String) {
@@ -29,19 +29,19 @@ impl Aff {
             });
     }
     
-    fn header(f: &mut File) -> io::Result<(u32, u32)> {
+    fn header(f: &mut File) -> io::Result<(u32, u32, u32)> {
         let _deadbeef = utils::read_u32(f)?;
         let _file_type = utils::read_u32(f)?;
-        utils::padding(f, 8)?;
+        utils::padding(f, 4)?;
 
-        let _hash_id = utils::read_u32(f)?;
-        utils::padding(f, 124)?;
+        let hash_id = utils::read_u32(f)?;
+        utils::padding(f, 128)?;
 
         let info_offset = utils::read_u32(f)? + 0x10u32;
         let info_len = utils::read_u32(f)?;
         utils::padding(f, 104)?;
 
-        Ok((info_offset, info_len))
+        Ok((info_offset, info_len, hash_id))
     }
 
     fn info(f: &mut File) -> io::Result<String> {
@@ -65,10 +65,10 @@ impl Aff {
             let f_u = file?;
             let file_name = f_u.file_name().to_str().unwrap().to_owned();
 
-            self.new_file(file_name.as_str());
-
             let mut f = File::open(f_u.path())?;
-            let (info_offset, info_len) = Aff::header(&mut f)?;
+            let (info_offset, info_len, hash_id) = Aff::header(&mut f)?;
+            self.new_file(file_name.as_str(), hash_id);
+
             utils::go_to(&mut f, info_offset.into())?; // move to info_offset
 
             let num_pairs = info_len/44;
@@ -98,6 +98,10 @@ impl Parser for Aff {
                 for item in files.keys().filter(|x| filter.is_empty() || x.to_lowercase().contains(filter)).sorted() {
                     if files[item].values.len() > 0 {
                         ui.collapsing(item, |ui| {
+                            ui.horizontal(|h| {
+                                h.strong("hash_id:");
+                                h.label(format!("{} ({:X})", files[item].hash_id, files[item].hash_id));
+                            });
                             let values = &files[item];
                             for value in values.values.iter() {
                                 ui.horizontal(|ui| {
@@ -121,14 +125,16 @@ impl Parser for Aff {
 
 #[derive(Serialize, Deserialize)]
 pub struct AffFile {
+    pub hash_id: u32,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
     pub values: Vec<String>
 }
 
 impl AffFile {
-    fn new() -> Self {
+    fn new(hash_id: u32) -> Self {
         Self {
+            hash_id,
             values: Vec::new()
         }
     }

@@ -18,8 +18,8 @@ impl Stl {
         }
     }
 
-    fn new_file(&mut self, file_name: &str) {
-        self.files.insert(file_name.to_owned(), StlFile::new());
+    fn new_file(&mut self, file_name: &str, hash_id: u32) {
+        self.files.insert(file_name.to_owned(), StlFile::new(hash_id));
     }
 
     fn add_field(&mut self, file_name: &String, key: String, value: String) {
@@ -29,18 +29,18 @@ impl Stl {
             });
     }
     
-    /// returns length of the info block
-    fn header(f: &mut File) -> io::Result<u32> {
+    /// returns length of the info block and hash_id
+    fn header(f: &mut File) -> io::Result<(u32, u32)> {
         let _deadbeef = utils::read_u32(f)?;
-        utils::padding(f, 12)?;
+        utils::padding(f, 8)?;
 
-        let _hash_id = utils::read_u32(f)?;
-        utils::padding(f, 16)?;
+        let hash_id = utils::read_u32(f)?;
+        utils::padding(f, 20)?;
 
         let info_len = utils::read_u32(f)?;
         utils::padding(f, 8)?;
         
-        Ok(info_len)
+        Ok((info_len, hash_id))
     }
 
     fn info(f: &mut File) -> io::Result<(String, String)> {
@@ -67,10 +67,10 @@ impl Stl {
             let f_u = file?;
             let file_name = f_u.file_name().to_str().unwrap().to_owned();
 
-            self.new_file(file_name.as_str());
-            
             let mut f = File::open(f_u.path())?;
-            let info_len = Stl::header(&mut f)?;
+            let (info_len, hash_id) = Stl::header(&mut f)?;
+            self.new_file(file_name.as_str(), hash_id);
+            
             let num_pairs = info_len/40;
             for _ in 0..num_pairs {
                 let (key, value) = Stl::info(&mut f)?;
@@ -90,7 +90,7 @@ impl Parser for Stl {
     fn data_view(&self, ui: &mut egui::Ui, filter: &str) {
         let files = &self.files;
         let keys: Vec<_> =  files.keys().filter(|x| filter.is_empty() || x.to_lowercase().contains(filter)).sorted().collect();
-        let scroll = egui::ScrollArea::new([false, true]);
+        let scroll = egui::ScrollArea::new([true, true]);
         scroll.show_rows(ui, 
             10f32, 
             keys.len(), 
@@ -104,6 +104,10 @@ impl Parser for Stl {
                         for item in &keys[range] {
                             if files[*item].fields.len() > 0 {
                                 ui.collapsing(*item, |ui| {
+                                    ui.horizontal(|h| {
+                                        h.strong("hash_id:");
+                                        h.label(format!("{} ({:X})", files[*item].hash_id, files[*item].hash_id));
+                                    });
                                     let values = &files[*item];
                                     for value in values.fields.keys().sorted() {
                                         ui.horizontal(|ui| {
@@ -114,7 +118,12 @@ impl Parser for Stl {
                                 });
                             }
                             else {
-                                ui.label(*item);
+                                ui.collapsing(*item, |ui| {
+                                    ui.horizontal(|h| {
+                                        h.strong("hash_id:");
+                                        h.label(format!("{}", files[*item].hash_id));
+                                    });
+                                });
                             }
                             ui.end_row();                            
                         }
@@ -131,14 +140,16 @@ impl Parser for Stl {
 
 #[derive(Serialize, Deserialize)]
 pub struct StlFile {
+    pub hash_id: u32,
     #[serde(skip_serializing_if = "HashMap::is_empty")]
     #[serde(default)]
     pub fields: HashMap<String, String>
 }
 
 impl StlFile {
-    fn new() -> Self {
+    fn new(hash_id: u32) -> Self {
         Self {
+            hash_id,
             fields: HashMap::new()
         }
     }
