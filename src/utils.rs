@@ -23,6 +23,14 @@ pub fn read_u32(f: &mut File) -> io::Result<u32> {
     Ok(result)
 }
 
+pub fn read_f32(f: &mut File) -> io::Result<f32> {
+    let mut buff = [0; 4];
+    f.read_exact(&mut buff)?;
+    let result = f32::from_le_bytes(buff);
+
+    Ok(result)
+}
+
 pub fn go_to(f: &mut File, offset: u64) -> io::Result<()> {
     f.seek(io::SeekFrom::Start(offset.into()))?;
     Ok(())

@@ -3,7 +3,7 @@ use itertools::Itertools;
 use serde::{Serialize, Deserialize};
 use serde_json;
 
-use super::{Parser, ParserFile};
+use super::{Parser};
 use crate::utils;
 
 #[derive(Serialize, Deserialize)]
@@ -45,13 +45,13 @@ impl Stl {
 
     fn info(f: &mut File) -> io::Result<(String, String)> {
         utils::padding(f, 8)?;
-        let key_offset = utils::read_u32(f)? + 16u32;
+        let key_offset = utils::read_u32(f)? + 0x10u32;
         let key_len = utils::read_u32(f)?;
         let buf = utils::read_offset(f, key_offset as u64, key_len as usize)?;
         let key_string = String::from_utf8(buf).unwrap();
         utils::padding(f, 8)?;
     
-        let val_offset = utils::read_u32(f)? + 16u32;
+        let val_offset = utils::read_u32(f)? + 0x10u32;
         let val_len = utils::read_u32(f)?;
         let buf = utils::read_offset(f, val_offset as u64, val_len as usize)?;
         let val_string = String::from_utf8(buf).unwrap();
@@ -136,15 +136,10 @@ pub struct StlFile {
     pub fields: HashMap<String, String>
 }
 
-
 impl StlFile {
     fn new() -> Self {
         Self {
             fields: HashMap::new()
         }
     }
-}
-
-impl ParserFile for StlFile {
-
 }

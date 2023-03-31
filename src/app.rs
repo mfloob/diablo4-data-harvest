@@ -1,10 +1,8 @@
 use egui::vec2;
 use egui_dock::{Tree, DockArea, Style};
-use crate::{Stl,Aff, parsers::{Parser}, utils};
+use crate::{Stl,Aff, parsers::{Parser, skl::Skl}, utils};
 
 pub struct AppContext {
-    stl: Stl,
-    aff: Aff,
     tabs: Tree<FileTab>,
     search: String
 }
@@ -16,10 +14,8 @@ pub struct App {
 impl Default for App {
     fn default() -> Self {
         let tabs = Tree::new(Vec::new());
-        let stl = Stl::new();
-        let aff = Aff::new();
         let search = Default::default();
-        let data = AppContext { stl, aff, tabs, search };
+        let data = AppContext { tabs, search };
 
         Self { 
             data: Box::new(data) 
@@ -44,14 +40,21 @@ impl eframe::App for App {
                         ui.close_menu();
                         if let Some(path) = rfd::FileDialog::new().pick_folder() {
                             let path = path.display().to_string();
-                            let _stl = self.data.stl.run(path).unwrap();
+                            let _stl = Stl::new().run(path).unwrap();
                         }
                     }
                     if ui.button("Parse aff folder...").clicked() {
                         ui.close_menu();
                         if let Some(path) = rfd::FileDialog::new().pick_folder() {
                             let path = path.display().to_string();
-                            let _aff = self.data.aff.run(path).unwrap();
+                            let _aff = Aff::new().run(path).unwrap();
+                        }
+                    }
+                    if ui.button("Parse skl folder...").clicked() {
+                        ui.close_menu();
+                        if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                            let path = path.display().to_string();
+                            let _skl = Skl::new().run(path).unwrap();
                         }
                     }
                     if ui.button("Quit").clicked() {
@@ -106,6 +109,21 @@ impl eframe::App for App {
                             let data_str = String::from_utf8(buf).unwrap();
 
                             let aff: Aff = serde_json::from_str(&data_str).unwrap();
+                            let tab = FileTab::new(Box::new(aff) as Box<dyn Parser>);
+                            self.data.tabs.push_to_focused_leaf(tab);
+                            self.data.search = Default::default();
+                    }
+                }
+                if ui.button("Load skl data").clicked() {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter(".json files", &["json"])
+                        .set_file_name("skl.json")
+                        .pick_file() {
+                            let path = path.display().to_string();
+                            let buf = utils::read_file(path).unwrap();
+                            let data_str = String::from_utf8(buf).unwrap();
+
+                            let aff: Skl = serde_json::from_str(&data_str).unwrap();
                             let tab = FileTab::new(Box::new(aff) as Box<dyn Parser>);
                             self.data.tabs.push_to_focused_leaf(tab);
                             self.data.search = Default::default();

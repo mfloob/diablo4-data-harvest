@@ -3,7 +3,7 @@ use itertools::Itertools;
 use serde::{Serialize, Deserialize};
 use serde_json;
 
-use super::{ParserFile, Parser};
+use super::{Parser};
 use crate::utils;
 
 #[derive(Serialize, Deserialize)]
@@ -22,8 +22,8 @@ impl Aff {
         self.files.insert(file_name.to_owned(), AffFile::new());
     }
 
-    fn add_field(&mut self, file_name: String, value: String) {
-        self.files.entry(file_name)
+    fn add_field(&mut self, file_name: &str, value: String) {
+        self.files.entry(file_name.to_string())
             .and_modify(|k| { 
                 k.values.push(value);
             });
@@ -37,7 +37,7 @@ impl Aff {
         let _hash_id = utils::read_u32(f)?;
         utils::padding(f, 124)?;
 
-        let info_offset = utils::read_u32(f)? + 16u32;
+        let info_offset = utils::read_u32(f)? + 0x10u32;
         let info_len = utils::read_u32(f)?;
         utils::padding(f, 104)?;
 
@@ -45,14 +45,14 @@ impl Aff {
     }
 
     fn info(f: &mut File) -> io::Result<String> {
-        let key_offset = utils::read_u32(f)? + 16u32;
+        let key_offset = utils::read_u32(f)? + 0x10u32;
         let key_len = utils::read_u32(f)?;
         let buf = utils::read_offset(f, key_offset as u64, key_len as usize)?;
         let key_string = String::from_utf8(buf).unwrap();
 
         utils::padding(f, 8)?;
 
-        let _something_offset = utils::read_u32(f)? + 16u32;
+        let _something_offset = utils::read_u32(f)? + 0x10u32;
         let _something_len = utils::read_u32(f)?;
 
         Ok(key_string)
@@ -78,7 +78,7 @@ impl Aff {
                     _ => utils::padding(&mut f, 16)?
                 }
                 let value = Aff::info(&mut f)?;
-                self.add_field(file_name.clone(), value.replace(char::from(0), ""));
+                self.add_field(&file_name, value.replace(char::from(0), ""));
             }
         }
 
@@ -132,8 +132,4 @@ impl AffFile {
             values: Vec::new()
         }
     }
-}
-
-impl ParserFile for AffFile {
-
 }
