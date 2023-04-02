@@ -128,7 +128,7 @@ impl Parser for Stl {
                             ui.end_row();                            
                         }
                     });
-                ui.allocate_space(egui::vec2(ui.available_width(), 1f32));
+                ui.allocate_space(egui::vec2(ui.available_width(), ui.available_height()));
         });
     }
 
